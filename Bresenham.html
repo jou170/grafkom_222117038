@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+</head>
+<body>
+    <canvas id="canvas" width="500" height="500" style="border: 2px solid;"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let startPoint = null;
+
+        canvas.addEventListener('click', (e) => {
+            const x = e.clientX - canvas.offsetLeft;
+            const y = e.clientY - canvas.offsetTop;
+
+            if (!startPoint) {
+                // Set the starting point
+                startPoint = { x, y };
+            } else {
+                // Draw the line from start to end using Bresenham algorithm
+                drawBresenhamLine(startPoint.x, startPoint.y, x, y);
+                startPoint = null; // Reset start point
+            }
+        });
+
+        function drawBresenhamLine(x1, y1, x2, y2) {
+            const dx = Math.abs(x2 - x1);
+            const sx = x1 < x2 ? 1 : -1;
+            const dy = -Math.abs(y2 - y1);
+            const sy = y1 < y2 ? 1 : -1;
+            let err = dx + dy;
+            let e2;
+
+            while (true) {
+                ctx.fillRect(x1, y1, 1, 1);
+
+                if (x1 === x2 && y1 === y2) break;
+
+                e2 = 2 * err;
+                if (e2 > dy) {
+                    err += dy;
+                    x1 += sx;
+                }
+                if (e2 < dx) {
+                    err += dx;
+                    y1 += sy;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
