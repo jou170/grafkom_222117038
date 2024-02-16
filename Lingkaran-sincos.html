@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Drawing using Polar Coordinates</title>
+</head>
+<body>
+    <canvas id="canvas" width="500" height="500" style="border: 2px solid;"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let center = null;
+
+        canvas.addEventListener('click', (e) => {
+            const x = e.clientX - canvas.offsetLeft;
+            const y = e.clientY - canvas.offsetTop;
+
+            if (!center) {
+                // Set the center point
+                center = { x, y };
+            } else {
+                // Calculate the radius
+                const dx = x - center.x;
+                const dy = y - center.y;
+                const radius = Math.sqrt(dx * dx + dy * dy);
+
+                // Draw the circle using polar coordinates
+                drawCircle(center.x, center.y, radius);
+
+                // Reset center for the next circle
+                center = null;
+            }
+        });
+
+        function drawCircle(xc, yc, r) {
+            const numPoints = 100; // Number of points to approximate the circle
+            ctx.beginPath();
+            for (let i = 0; i <= numPoints; i++) {
+                const theta = (2 * Math.PI * i) / numPoints;
+                const x = xc + r * Math.cos(theta);
+                const y = yc + r * Math.sin(theta);
+                if (i === 0) {
+                    ctx.moveTo(x, y); // Move to the first point
+                } else {
+                    ctx.lineTo(x, y); // Draw a line to the next point
+                }
+            }
+            ctx.closePath(); // Close the path to connect the last point to the first
+            ctx.stroke(); // Stroke the path to draw the circle outline
+        }
+    </script>
+</body>
+</html>
