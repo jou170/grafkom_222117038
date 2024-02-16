@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Drawing </title>
+</head>
+<body>
+    <canvas id="canvas" width="500" height="500" style="border: 2px solid;"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let center = null;
+
+        canvas.addEventListener('click', (e) => {
+            const x = e.clientX - canvas.offsetLeft;
+            const y = e.clientY - canvas.offsetTop;
+
+            if (!center) {
+                // Set the center point
+                center = { x, y };
+            } else {
+                // Calculate the radius
+                const dx = x - center.x;
+                const dy = y - center.y;
+                const radius = Math.sqrt(dx * dx + dy * dy);
+
+                // Draw the circle using the sqrt formula
+                drawCircle(center.x, center.y, radius);
+
+                // Reset center for the next circle
+                center = null;
+            }
+        });
+
+        function drawCircle(xc, yc, r) {
+            // Define the step size based on the radius
+            const stepSize = 1 / r;
+
+            // Plot the points along the circumference
+            for (let x = -r; x <= r; x += stepSize) {
+                const y = Math.sqrt(r * r - x * x); // Calculate y using the circle equation
+
+                // Plot the points
+                ctx.fillRect(xc + x, yc + y, 1, 1);
+                ctx.fillRect(xc + x, yc - y, 1, 1);
+            }
+        }
+    </script>
+</body>
+</html>
