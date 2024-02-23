@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Segitiga dari Titik Klik</title>
+<style>
+    canvas {
+        border: 1px solid black;
+    }
+</style>
+</head>
+<body>
+<canvas id="myCanvas" width="600" height="400"></canvas>
+
+<script>
+    var canvas = document.getElementById('myCanvas');
+    var ctx = canvas.getContext('2d');
+    var points = [];
+    var trianglePoints = [];
+
+    canvas.addEventListener('click', function(event) {
+        var rect = canvas.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+        points.push({x: x, y: y});
+        if (points.length === 3) {
+            drawTriangle();
+            fillTriangle();
+            points = [];
+        }
+    });
+
+    function drawTriangle() {
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        ctx.lineTo(points[1].x, points[1].y);
+        ctx.lineTo(points[2].x, points[2].y);
+        ctx.closePath();
+        ctx.stroke();
+    }
+
+    function fillTriangle() {
+        var boundingBox = getBoundingBox(points);
+        var randomColor = getRandomColor();
+
+        ctx.fillStyle = randomColor;
+
+        for (var y = boundingBox.minY; y < boundingBox.maxY; y++) {
+            for (var x = boundingBox.minX; x < boundingBox.maxX; x++) {
+                if (isInsideTriangle(x, y, points)) {
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+        }
+    }
+
+    function isInsideTriangle(x, y, points) {
+        var A = 1 / 2 * (-points[1].y * points[2].x + points[0].y * (-points[1].x + points[2].x) + points[0].x * (points[1].y - points[2].y) + points[1].x * points[2].y);
+        var sign = A < 0 ? -1 : 1;
+        var s = (points[0].y * points[2].x - points[0].x * points[2].y + (points[2].y - points[0].y) * x + (points[0].x - points[2].x) * y) * sign;
+        var t = (points[0].x * points[1].y - points[0].y * points[1].x + (points[0].y - points[1].y) * x + (points[1].x - points[0].x) * y) * sign;
+        return s > 0 && t > 0 && (s + t) < 2 * A * sign;
+    }
+
+    function getBoundingBox(points) {
+        var minY = Math.min(points[0].y, points[1].y, points[2].y);
+        var maxY = Math.max(points[0].y, points[1].y, points[2].y);
+        var minX = Math.min(points[0].x, points[1].x, points[2].x);
+        var maxX = Math.max(points[0].x, points[1].x, points[2].x);
+        return {minX: minX, minY: minY, maxX: maxX, maxY: maxY};
+    }
+
+    function getRandomColor() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+</script>
+</body>
+</html>
