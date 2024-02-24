@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draw Gradient Triangle</title>
+<style>
+    canvas {
+        border: 1px solid black;
+        cursor: crosshair;
+    }
+</style>
+</head>
+<body>
+<canvas id="myCanvas" width="500" height="500"></canvas>
+<div>
+    <label for="colorPicker1">Warna Titik 1:</label>
+    <input type="color" id="colorPicker1" value="#ff0000"><br>
+    <label for="colorPicker2">Warna Titik 2:</label>
+    <input type="color" id="colorPicker2" value="#00ff00"><br>
+    <label for="colorPicker3">Warna Titik 3:</label>
+    <input type="color" id="colorPicker3" value="#0000ff"><br>
+</div>
+<script>
+    var canvas = document.getElementById('myCanvas');
+    var ctx = canvas.getContext('2d');
+    var points = [];
+    var triangles = [];
+    var colorPicker1 = document.getElementById('colorPicker1');
+    var colorPicker2 = document.getElementById('colorPicker2');
+    var colorPicker3 = document.getElementById('colorPicker3');
+
+    canvas.addEventListener('click', function(event) {
+        var rect = canvas.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+
+        points.push({ x: x, y: y });
+
+        if (points.length === 3) {
+            var triangle = [
+                { x: points[0].x, y: points[0].y, R: hexToRgb(colorPicker1.value).r, G: hexToRgb(colorPicker1.value).g, B: hexToRgb(colorPicker1.value).b }, // Titik 1
+                { x: points[1].x, y: points[1].y, R: hexToRgb(colorPicker2.value).r, G: hexToRgb(colorPicker2.value).g, B: hexToRgb(colorPicker2.value).b }, // Titik 2
+                { x: points[2].x, y: points[2].y, R: hexToRgb(colorPicker3.value).r, G: hexToRgb(colorPicker3.value).g, B: hexToRgb(colorPicker3.value).b }  // Titik 3
+            ];
+            triangles.push(triangle);
+            drawGradientTriangle(triangle);
+            points = [];
+        }
+    });
+
+    function drawGradientTriangle(points) {
+        var p1 = points[0];
+        var p2 = points[1];
+        var p3 = points[2];
+
+        // Calculate normal vector of the plane formed by the three points
+        var normal = crossProduct(
+            { x: p2.x - p1.x, y: p2.y - p1.y, z: 0 },
+            { x: p3.x - p1.x, y: p3.y - p1.y, z: 0 }
+        );
+
+        // Normalize normal vector
+        var length = Math.sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+        normal.x /= length;
+        normal.y /= length;
+        normal.z /= length;
+
+        // Calculate coefficients of the 3D plane equation (Ax + By + Cz + D = 0)
+        var A = normal.x;
+        var B = normal.y;
+        var C = normal.z;
+        var D = -A * p1.x - B * p1.y - C * p1.z;
+
+        // Interpolate R, G, and B values for each point in the triangle
+        for (var y = 0; y < canvas.height; y++) {
+            for (var x = 0; x < canvas.width; x++) {
+                var b1, b2, b3;
+                b1 = sign(x, y, p2.x, p2.y, p3.x, p3.y) < 0.0;
+                b2 = sign(x, y, p3.x, p3.y, p1.x, p1.y) < 0.0;
+                b3 = sign(x, y, p1.x, p1.y, p2.x, p2.y) < 0.0;
+
+                if ((b1 == b2) && (b2 == b3)) {
+                    // Calculate z value for the current point using the 3D plane equation
+                    var z = -(A * x + B * y + D) / C;
+
+                    // Interpolate R, G, and B values based on z
+                    var w1 = ((p2.y - p3.y) * (x - p3.x) + (p3.x - p2.x) * (y - p3.y)) /
+                             ((p2.y - p3.y) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.y - p3.y));
+                    var w2 = ((p3.y - p1.y) * (x - p3.x) + (p1.x - p3.x) * (y - p3.y)) /
+                             ((p2.y - p3.y) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.y - p3.y));
+                    var w3 = 1 - w1 - w2;
+
+                    var R = Math.round(w1 * p1.R + w2 * p2.R + w3 * p3.R);
+                    var G = Math.round(w1 * p1.G + w2 * p2.G + w3 * p3.G + w3);
+                    var B = Math.round(w1 * p1.B + w2 * p2.B + w3 * p3.B + w3);
+
+                    ctx.fillStyle = 'rgb(' + R + ',' + G + ',' + B + ')';
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+        }
+    }
+
+    function sign(x1, y1, x2, y2, x3, y3) {
+        return (x1 - x3) * (y2 - y3) - (x2 - x3) * (y1 - y3);
+    }
+
+    function crossProduct(v1, v2) {
+        var x = v1.y * v2.z - v1.z * v2.y;
+        var y = v1.z * v2.x - v1.x * v2.z;
+        var z = v1.x * v2.y - v1.y * v2.x;
+        return { x: x, y: y, z: z };
+    }
+
+    // Fungsi untuk mengubah format hex menjadi RGB
+    function hexToRgb(hex) {
+        // Hapus tanda # jika ada
+        hex = hex.replace(/^#/, '');
+
+        // Pisahkan nilai R, G, dan B
+        var r = parseInt(hex.substring(0, 2), 16);
+        var g = parseInt(hex.substring(2, 4), 16);
+        var b = parseInt(hex.substring(4, 6), 16);
+
+        return {
+            r: r,
+            g: g,
+            b: b
+        };
+    }
+</script>
+</body>
+</html>
