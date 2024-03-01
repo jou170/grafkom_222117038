@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smooth Color Triangle</title>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+    }
+    canvas {
+        display: block;
+        border: 1px solid black;
+        background-color: black; /* Latar belakang kanvas menjadi hitam */
+    }
+</style>
+</head>
+<body>
+<canvas id="glCanvas" width="400" height="400"></canvas>
+
+<script>
+    // Inisialisasi WebGL 2
+    const canvas = document.getElementById('glCanvas');
+    const gl = canvas.getContext('webgl2');
+
+    if (!gl) {
+        alert('WebGL 2 tidak tersedia di browser Anda.');
+    }
+
+    // Shaders
+    const vertexShaderSource = 
+    `#version 300 es
+        in vec2 a_position;
+        in vec4 a_color;
+        out vec4 v_color;
+        void main() {
+            gl_Position = vec4(a_position, 0.0, 1.0);
+            v_color = a_color;
+        }
+    `;
+
+    const fragmentShaderSource = 
+    `#version 300 es
+        precision mediump float;
+        in vec4 v_color;
+        out vec4 fragColor;
+        void main() {
+            fragColor = v_color;
+        }
+    `;
+
+    // Compile shader
+    function compileShader(gl, source, type) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+            return null;
+        }
+        return shader;
+    }
+
+    const vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
+    const fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
+
+    // Link shaders
+    function createProgram(gl, vertexShader, fragmentShader) {
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error('Program linking error:', gl.getProgramInfoLog(program));
+            gl.deleteProgram(program);
+            return null;
+        }
+        return program;
+    }
+
+    const program = createProgram(gl, vertexShader, fragmentShader);
+
+    // Set up vertex buffer
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    const positions = [
+        -0.5, -0.5,  // vertex 1
+         0.5, -0.5,  // vertex 2
+         0.0,  0.5   // vertex 3
+    ];
+
+    const colors = [
+        1.0, 0.0, 0.0, 1.0,  // red   (vertex 1)
+        0.0, 1.0, 0.0, 1.0,  // green (vertex 2)
+        0.0, 0.0, 1.0, 1.0   // blue  (vertex 3)
+    ];
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([...positions, ...colors]), gl.STATIC_DRAW);
+
+    // Set up attribute
+    const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
+    const colorAttributeLocation = gl.getAttribLocation(program, 'a_color');
+
+    gl.enableVertexAttribArray(positionAttributeLocation);
+    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(colorAttributeLocation);
+    gl.vertexAttribPointer(colorAttributeLocation, 4, gl.FLOAT, false, 0, positions.length * 4);
+
+    // Clear screen
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // Use shader program
+    gl.useProgram(program);
+
+    // Draw
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+</script>
+</body>
+</html>
