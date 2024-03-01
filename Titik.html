@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebGL One Pixel</title>
+<title>WebGL Two Pixel</title>
 <style>
     body {
         margin: 0;
@@ -19,26 +19,27 @@
 <canvas id="glCanvas" width="400" height="400"></canvas>
 
 <script>
-    // Inisialisasi WebGL
+    // Inisialisasi WebGL 2
     const canvas = document.getElementById('glCanvas');
-    const gl = canvas.getContext('webgl');
+    const gl = canvas.getContext('webgl2');
 
     if (!gl) {
-        alert('WebGL tidak tersedia di browser Anda.');
+        alert('WebGL 2 tidak tersedia di browser Anda.');
     }
 
     // Shaders
-    const vertexShaderSource = `
-        attribute vec2 a_position;
+    const vertexShaderSource = `#version 300 es
+        in vec2 a_position;
         void main() {
             gl_Position = vec4(a_position, 0.0, 1.0);
         }
     `;
 
-    const fragmentShaderSource = `
+    const fragmentShaderSource = `#version 300 es
         precision mediump float;
+        out vec4 fragColor;
         void main() {
-            gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // Merah
+            fragColor = vec4(1.0, 0.0, 0.0, 1.0); // Merah
         }
     `;
 
