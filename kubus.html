@@ -1,0 +1,242 @@
+
+<!DOCTYPE html> <html> <head> <title>WebGL 2 Cube Rotation</title> <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"></script> <style> canvas { border: 1px solid black; } </style> </head> <body> <canvas id="glCanvas" width="640" height="640"></canvas>
+
+
+    <script>
+        // Vertex shader source code
+        const vertexShaderSource = `#version 300 es
+            in vec3 a_position;
+            in vec4 a_color;
+            out vec4 v_color;
+    
+            uniform mat4 u_modelViewMatrix;
+    
+            void main() {
+                gl_Position = u_modelViewMatrix * vec4(a_position, 1.0);
+                v_color = a_color;
+            }
+        `;
+    
+        // Fragment shader source code
+        const fragmentShaderSource = `#version 300 es
+            precision highp float;
+            in vec4 v_color;
+            out vec4 outColor;
+    
+            void main() {
+                outColor = v_color;
+            }
+        `;
+    
+        // Initialize WebGL 2 context
+        const canvas = document.getElementById('glCanvas');
+        const gl = canvas.getContext('webgl2');
+    
+        // Create and compile vertex shader
+        const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vertexShader, vertexShaderSource);
+        gl.compileShader(vertexShader);
+    
+        // Create and compile fragment shader
+        const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fragmentShader, fragmentShaderSource);
+        gl.compileShader(fragmentShader);
+    
+        // Create shader program and attach shaders
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        gl.useProgram(program);
+    
+        // Set up cube vertices, colors, and indices
+        const cubeVertices = [
+            // Front face
+            -0.5, -0.5, 0.5,
+            0.5, -0.5, 0.5,
+            0.5, 0.5, 0.5,
+            -0.5, 0.5, 0.5,
+    
+            // Back face
+            -0.5, -0.5, -0.5,
+            -0.5, 0.5, -0.5,
+            0.5, 0.5, -0.5,
+            0.5, -0.5, -0.5,
+    
+            // Top face
+            // -0.5, 0.5, -0.5,
+            // -0.5, 0.5, 0.5,
+            // 0.5, 0.5, 0.5,
+            // 0.5, 0.5, -0.5,
+    
+            // Bottom face
+            -0.5, -0.5, -0.5,
+            0.5, -0.5, -0.5,
+            0.5, -0.5, 0.5,
+            -0.5, -0.5, 0.5,
+    
+            // Right face
+            0.5, -0.5, -0.5,
+            0.5, 0.5, -0.5,
+            0.5, 0.5, 0.5,
+            0.5, -0.5, 0.5,
+    
+            // Left face
+            -0.5, -0.5, -0.5,
+            -0.5, -0.5, 0.5,
+            -0.5, 0.5, 0.5,
+            -0.5, 0.5, -0.5,
+        ];
+    
+        const cubeColors = [
+            // Front face
+            1.0, 0.0, 0.0, 1.0,
+            1.0, 0.0, 0.0, 1.0,
+            1.0, 0.0, 0.0, 1.0,
+            1.0, 0.0, 0.0, 1.0,
+    
+            // Back face
+            0.0, 1.0, 0.0, 1.0,
+            0.0, 1.0, 0.0, 1.0,
+            0.0, 1.0, 0.0, 1.0,
+            0.0, 1.0, 0.0, 1.0,
+    
+            // Top face
+            0.0, 0.0, 1.0, 1.0,
+            0.0, 0.0, 1.0, 1.0,
+            0.0, 0.0, 1.0, 1.0,
+            0.0, 0.0, 1.0, 1.0,
+    
+            // Bottom face
+            1.0, 1.0, 0.0, 1.0,
+            1.0, 1.0, 0.0, 1.0,
+            1.0, 1.0, 0.0, 1.0,
+            1.0, 1.0, 0.0, 1.0,
+    
+            // Right face
+            1.0, 0.0, 1.0, 1.0,
+            1.0, 0.0, 1.0, 1.0,
+            1.0, 0.0, 1.0, 1.0,
+            1.0, 0.0, 1.0, 1.0,
+    
+            // Left face
+            0.0, 1.0, 1.0, 1.0,
+            0.0, 1.0, 1.0, 1.0,
+            0.0, 1.0, 1.0, 1.0,
+            0.0, 1.0, 1.0, 1.0,
+        ];
+    
+        const cubeIndices = [
+            0, 1, 2, 0, 2, 3,    // Front face
+            4, 5, 6, 4, 6, 7,    // Back face
+            8, 9, 10, 8, 10, 11,  // Top face
+            12, 13, 14, 12, 14, 15,  // Bottom face
+            16, 17, 18, 16, 18, 19,  // Right face
+            20, 21, 22, 20, 22, 23   // Left face
+        ];
+    
+        // Create vertex buffer objects (VBOs) and bind data
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cubeVertices), gl.STATIC_DRAW);
+    
+        const colorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cubeColors), gl.STATIC_DRAW);
+    
+        const indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeIndices), gl.STATIC_DRAW);
+    
+        // Get attribute and uniform locations
+        const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
+        const colorAttributeLocation = gl.getAttribLocation(program, 'a_color');
+        const modelViewMatrixUniformLocation = gl.getUniformLocation(program, 'u_modelViewMatrix');
+    
+        // Set up rendering loop
+        let leftRotationX = 0;
+        let leftRotationY = 0;
+        let leftRotationZ = 0;
+        let rightRotationX = 0;
+        let rightRotationY = 0;
+        let rightRotationZ = 0;
+    
+    
+    function render() {
+        // Clear canvas
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        // gl.enable(gl.DEPTH_TEST);
+        // gl.enable(gl.CULL_FACE);
+    
+        // Create scaling matrices
+        const leftScalingMatrix = mat4.create();
+        mat4.scale(leftScalingMatrix, leftScalingMatrix, [0.25, 0.25, 0.25]);
+        const rightScalingMatrix = mat4.create();
+        mat4.scale(rightScalingMatrix, rightScalingMatrix, [0.3, 0.3, 0.3]);
+    
+        // Create rotation matrices for left cube
+        const leftRotationMatrix = mat4.create();
+        mat4.rotateX(leftRotationMatrix, leftRotationMatrix, leftRotationX);
+        mat4.rotateY(leftRotationMatrix, leftRotationMatrix, leftRotationY);
+        mat4.rotateZ(leftRotationMatrix, leftRotationMatrix, leftRotationZ);
+    
+        // Create rotation matrices for right cube
+        const rightRotationMatrix = mat4.create();
+        mat4.rotateX(rightRotationMatrix, rightRotationMatrix, rightRotationX);
+        mat4.rotateY(rightRotationMatrix, rightRotationMatrix, rightRotationY);
+        mat4.rotateZ(rightRotationMatrix, rightRotationMatrix, rightRotationZ);
+    
+        // Create translation matrices
+        const leftTranslationMatrix = mat4.create();
+        mat4.translate(leftTranslationMatrix, leftTranslationMatrix, [-0.5, 0, 0]);
+        const rightTranslationMatrix = mat4.create();
+        mat4.translate(rightTranslationMatrix, rightTranslationMatrix, [0.5, 0, 0]);
+    
+        // Combine scaling, rotation, and translation matrices for left cube
+        const leftModelViewMatrix = mat4.create();
+        mat4.multiply(leftModelViewMatrix, leftTranslationMatrix, leftScalingMatrix);
+        mat4.multiply(leftModelViewMatrix, leftModelViewMatrix, leftRotationMatrix);
+    
+        // Combine scaling, rotation, and translation matrices for right cube
+        const rightModelViewMatrix = mat4.create();
+        mat4.multiply(rightModelViewMatrix, rightTranslationMatrix, rightScalingMatrix);
+        mat4.multiply(rightModelViewMatrix, rightModelViewMatrix, rightRotationMatrix);
+    
+        // Render left cube
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(positionAttributeLocation);
+    
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.vertexAttribPointer(colorAttributeLocation, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(colorAttributeLocation);
+    
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.uniformMatrix4fv(modelViewMatrixUniformLocation, false, leftModelViewMatrix);
+        gl.drawElements(gl.TRIANGLES, cubeIndices.length, gl.UNSIGNED_SHORT, 0);
+    
+        // Render right cube
+        gl.uniformMatrix4fv(modelViewMatrixUniformLocation, false, rightModelViewMatrix);
+        gl.drawElements(gl.TRIANGLES, cubeIndices.length, gl.UNSIGNED_SHORT, 0);
+    
+        // Update rotation angles
+        leftRotationX += 0.01;
+        leftRotationY += 0.02;
+        leftRotationZ += 0.0;
+        rightRotationX += 0.02;
+        rightRotationY += 0.03;
+        rightRotationZ += 0.0;
+    
+        // Request next frame
+        requestAnimationFrame(render);
+    }
+    
+    
+    
+        // Start rendering
+        render();
+    </script>
+    
+    
+    </body> </html>
